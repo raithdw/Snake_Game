@@ -13,11 +13,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import javax.swing.ImageIcon;
-import javax.swing.JPanel;
-import javax.swing.Timer;
+import javax.swing.*;
 
 public class Board extends JPanel implements ActionListener {
+
+    private int delay = 150;
+    private final int MIN_DELAY = 50;
+    private JButton retryButton;
 
     private final int B_WIDTH = 400;
     private final int B_HEIGHT = 400;
@@ -49,6 +51,15 @@ public class Board extends JPanel implements ActionListener {
 
     private void initBoard() {
 
+        setLayout(null); // allow absolute positioning
+
+        retryButton = new JButton("Retry");
+        retryButton.setBounds(150, 220, 100, 30);
+        retryButton.setVisible(false);
+        retryButton.addActionListener(e -> initGame());
+
+        add(retryButton);
+
         addKeyListener(new TAdapter());
         setBackground(Color.black);
         setFocusable(true);
@@ -70,20 +81,34 @@ public class Board extends JPanel implements ActionListener {
         head = imageid3.getImage();
     }
 
-    private void initGame() {
+    public void initGame() {
 
         dots = 3;
+        delay = 150;
+        inGame = true;
+
+        retryButton.setVisible(false);
+
+        leftDirection = false;
+        rightDirection = true;
+        upDirection = false;
+        downDirection = false;
 
         for (int z = 0; z < dots; z++) {
-            x[z] = 50 - z * 10;
+            x[z] = 50 - z * DOT_SIZE;
             y[z] = 50;
         }
 
         locateApple();
 
-        int DELAY = 150;
-        timer = new Timer(DELAY, this);
+        if (timer != null) {
+            timer.stop();
+        }
+
+        timer = new Timer(delay, this);
         timer.start();
+
+        requestFocusInWindow(); // keyboard works after retry
     }
 
     @Override
@@ -131,6 +156,12 @@ public class Board extends JPanel implements ActionListener {
         if ((x[0] == apple_x) && (y[0] == apple_y)) {
 
             dots++;
+
+            if (delay > MIN_DELAY) {
+                delay -= 5; // increase speed
+                timer.setDelay(delay);
+            }
+
             locateApple();
         }
     }
@@ -169,24 +200,13 @@ public class Board extends JPanel implements ActionListener {
             }
         }
 
-        if (y[0] >= B_HEIGHT) {
-            inGame = false;
-        }
-
-        if (y[0] < 0) {
-            inGame = false;
-        }
-
-        if (x[0] >= B_WIDTH) {
-            inGame = false;
-        }
-
-        if (x[0] < 0) {
+        if (y[0] >= B_HEIGHT || y[0] < 0 || x[0] >= B_WIDTH || x[0] < 0) {
             inGame = false;
         }
 
         if (!inGame) {
             timer.stop();
+            retryButton.setVisible(true);
         }
     }
 
